@@ -204,7 +204,7 @@ static int lua_select_module_select(lua_State *L) {
     return luaL_error(L, err);
   }
   if(sockets_already_ready) {
-    ngx_log_error(NGX_LOG_WARN, r->connection->log, 0, "Detected bytes already waiting to be read on socket when using the select module");
+    ngx_log_error(NGX_LOG_INFO, r->connection->log, 0, "Detected bytes already waiting to be read on socket when using the select module");
     int retcount = ngx_lua_select_push_result(L, ctx);
     for(unsigned i=0; i<ctx->count; i++) {
       luaL_unref(L, LUA_REGISTRYINDEX, ctx->socket[i].lua_socket_ref);

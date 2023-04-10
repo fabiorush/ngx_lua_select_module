@@ -24,7 +24,6 @@ local function create_select_table(arg)
   if not arg.exclude_resty_client then
     select_table[clientsock] = 'r'
   end
-  local upsocks = {}
   for i=1,arg.clients do
     local upsock = ngx.socket.tcp()
     upsock:settimeouts(1000, 300, 1)
@@ -32,7 +31,6 @@ local function create_select_table(arg)
     if not ok then
       error("failed to connect to upstream at " .. arg.upstream_host .. ":" .. arg.upstream_port)
     end
-    table.insert(upsocks, upsock)
     select_table[upsock]='r'
   end
   return select_table
@@ -132,7 +130,7 @@ Msgbuf = {
     return setmetatable({}, Msgbuf)
   end,
   __index = {
-  chunksize=256,
+  chunksize=10 * 1024,
   append = function(self, data)
     if not self.buf then
       self.buf = data

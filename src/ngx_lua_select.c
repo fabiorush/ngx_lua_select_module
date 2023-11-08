@@ -7,20 +7,24 @@
 
 int ngx_lua_select_push_result(lua_State *L, ngx_lua_select_ctx_t *ctx) {
   int ready_count = 0;
+  int lua_checkstack_failed = 0;
   lua_createtable(L, 1, 1); //chances are just 1 socket was ready. doesn't matter if there are more or fewer though
   int socktable_index = lua_gettop(L);
   
   for(unsigned i=0; i<ctx->count; i++) {
     ngx_lua_select_socket_t *s = &ctx->socket[i];
-    int                      sockref = s->lua_socket_ref;
+    int                sockref = s->lua_socket_ref;
 
-    if(! s->read_ready && !s->write_ready) {
+    if(!s->read_ready && !s->write_ready) {
       continue;
     }
     
     int sane_stack_top = lua_gettop(L);
     ready_count++;
-    lua_checkstack(L, 3);
+    if(!lua_checkstack(L, 3)) {
+      lua_checkstack_failed = 1;
+      break;
+    }
     lua_rawgeti(L, LUA_REGISTRYINDEX, sockref);
     lua_pushvalue(L, -1);
     if(s->read_ready && s->write_ready) {
@@ -37,11 +41,16 @@ int ngx_lua_select_push_result(lua_State *L, ngx_lua_select_ctx_t *ctx) {
     assert(lua_gettop(L) == sane_stack_top);
   }
 
-  if(ready_count == 0 && ctx->timer.timedout) {
-    //timeout error
+  if(lua_checkstack_failed || (ready_count == 0 && ctx->timer.timedout)) {
+    //timeout or lua_checkstack error
     lua_pop(L, 1); //pop the empty ready-sockets table
     lua_pushnil(L);
-    lua_pushliteral(L, "timeout");
+    if(lua_checkstack(L, 1)) {
+      if(lua_checkstack_failed)
+        lua_pushliteral(L, "not enough memory");
+      else
+        lua_pushliteral(L, "timeout");
+    }
     return 2;
   }
   return 1;

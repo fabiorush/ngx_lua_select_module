@@ -35,6 +35,9 @@ enum {
   SOCKET_CONNECT_TIMEOUT_INDEX = 2,
   SOCKET_SEND_TIMEOUT_INDEX = 4,
   SOCKET_READ_TIMEOUT_INDEX = 5,
+  SOCKET_CLIENT_CERT_INDEX  = 6,
+  SOCKET_CLIENT_PKEY_INDEX  = 7,
+  SOCKET_BIND_INDEX = 8   /* only in upstream cosocket */
 };
 
 typedef struct {
